@@ -78,7 +78,7 @@
             <span class="announcement-title">{{ value.title }}</span>
             <span class="priority-badge priority-high">Priority: {{ value.priority }}</span>
           </div>
-          <div class="announcement-content" v-html="formatAnnouncementContent(value.content)"></div>
+          <div class="announcement-content">{{ value.content }}</div>
           <div class="announcement-meta">
             <span>Publisher: {{ value.publisher }}</span>
             <span><span class="us-time" data-time="{{ value.publish_time }}">{{ formatUSDate(value.publish_time) }}</span></span>
@@ -683,6 +683,9 @@
   </div>
   </div>
   
+  <!-- VIP合作单位 -->
+  <VipPartnerOrganizations />
+  
   <!-- 会员排行榜弹窗 -->
   <div v-if="isRankingsModalOpen" class="rankings-modal-overlay" @click="closeRankingsModal">
     <div class="rankings-modal" @click.stop>
@@ -750,6 +753,7 @@
 import { ref, onMounted, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import navcomponent from '../component/nav/nav.vue';
+import VipPartnerOrganizations from '@/components/VipPartnerOrganizations.vue';
 import{ get_userinfo,get_membership_levels,get_VipDashboardData,closetrades, updateUserAvatar, get_stock_prices } from '../../api/module/web/vip'
 import{ gettrader_profiles} from '../../api/module/web/index'
 import { uploadImage } from '../../api/module/commone'
@@ -790,21 +794,6 @@ const getProfitColor = (value: number) => {
 };
 
 // Format date to US time format
-// 格式化公告内容，按段落分割显示
-const formatAnnouncementContent = (content: string) => {
-  if (!content) return '';
-  
-  // 将内容按换行符分割成段落
-  const paragraphs = content.split(/\n+/).filter(p => p.trim());
-  
-  // 将每个段落包装在 <p> 标签中
-  return paragraphs.map(paragraph => {
-    const trimmed = paragraph.trim();
-    if (!trimmed) return '';
-    return `<p style="margin-bottom: 1rem; line-height: 1.7;">${trimmed}</p>`;
-  }).join('');
-};
-
 const formatUSDate = (dateString: string) => {
   if (!dateString) return '';
   
@@ -986,13 +975,22 @@ onMounted(()=>{
  }, 30000);
 })
 const gettraderprofiles= async()=>{
-  const res=await gettrader_profiles();
-  if(res.success){
-    traderTerms.value=res.data.trader_profiles.terms.split('\n')
-   if (res.data.trader_profiles) {
+  try {
+    const res=await gettrader_profiles();
+    if(res.success && res.data && res.data.trader_profiles){
+      const traderProfile = res.data.trader_profiles;
+      // 检查terms是否存在且为字符串
+      if (traderProfile.terms && typeof traderProfile.terms === 'string') {
         // 将terms字符串按行分割成数组
-        traderTerms.value = res.data.trader_profiles.split('\n').filter(term => term.trim() !== '');
-  }
+        traderTerms.value = traderProfile.terms.split('\n').filter(term => term.trim() !== '');
+      } else {
+        traderTerms.value = [];
+        console.warn('trader_profiles.terms 不存在或不是字符串');
+      }
+    }
+  } catch (error) {
+    console.error('加载交易员条款失败:', error);
+    traderTerms.value = [];
   }
 };
 const get_membership_levels_list=async()=>{
@@ -2839,6 +2837,7 @@ const handleImageChange = async (event) => {
           margin-bottom: 18px;
           line-height: 1.7;
           word-break: break-all;
+          white-space: pre-wrap;
         }
         .announcement-meta {
           font-size: 0.98rem;
