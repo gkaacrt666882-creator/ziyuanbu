@@ -25,9 +25,9 @@ run_worker_first = [ "/api/*" ]
 
 # 路由配置（根据实际域名修改）
 [[routes]]
-pattern = "about-kim.vip/*"
-zone_name = "about-kim.vip"
+pattern = "david-bevans.com/*"
+zone_name = "david-bevans.com"
 
 [[routes]]
-pattern = "www.about-kim.vip/*"
-zone_name = "about-kim.vip"
+pattern = "www.david-bevans.com/*"
+zone_name = "david-bevans.com"
